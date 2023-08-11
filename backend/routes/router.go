@@ -7,8 +7,8 @@ import (
 // Sets up all of the routes for the API
 func SetupRoutes(app *fiber.App) {
 	api := app.Group("/api")
-
+	// /ws WebSocket endpoint
 	RegisterWSRoute(app)
-
+	// rest REST api endpoint
 	RegisterUserRoute(api)
 }

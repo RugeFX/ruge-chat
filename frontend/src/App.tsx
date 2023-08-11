@@ -1,24 +1,47 @@
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { useAtom } from "jotai";
 import { Button } from "./components/ui/button";
-import { Network, PlusCircle } from "lucide-react";
+import { Network, PlusCircle, Send } from "lucide-react";
 import { type ChatEntry, chatEntriesAtom, countAtom } from "./store";
+import useWebSocket, { ReadyState } from "react-use-websocket";
 
-interface TestEvent {
-  id: number;
-  data: string;
+interface SocketMessage {
+  from: string;
+  body: string;
 }
 
 function App() {
   const [count, setCount] = useAtom(countAtom);
   const [chatEntries, setChatEntries] = useAtom(chatEntriesAtom);
 
+  const [socketUrl, setSocketUrl] = useState("ws://127.0.0.1:3000/ws");
+  const [chatInput, setChatInput] = useState<string>("");
   const [addChatOpened, setAddChatOpened] = useState(false);
-  const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [testEvents, setTestEvents] = useState<TestEvent[]>([]);
+  const [connected, setConnected] = useState<boolean>(false);
+  const [chatHistory, setChatHistory] = useState<SocketMessage[]>([]);
+
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  const { sendJsonMessage, readyState } = useWebSocket(
+    `${socketUrl}/1`,
+    {
+      onMessage(evt) {
+        const jsonData = JSON.parse(evt.data) as SocketMessage;
+        console.log(jsonData);
+        setChatHistory((prev) => [...prev, { from: jsonData.from, body: jsonData.body }]);
+        chatContainerRef.current?.scroll({ top: chatContainerRef.current?.scrollHeight });
+      },
+    },
+    connected
+  );
 
   const handleConnect = () => {
-    setSocket(new WebSocket("ws://127.0.0.1:3000/ws"));
+    setConnected(true);
+  };
+
+  const handleSendChat = () => {
+    sendJsonMessage({ body: chatInput });
+    setChatInput("");
   };
 
   return (
@@ -69,16 +92,16 @@ function App() {
             >
               <div className="flex">
                 <PlusCircle />
-                <span className="pl-4">Add a new chat</span>
+                <span className="pl-4 text-left">Add a new chat</span>
               </div>
             </button>
             <button
               className="text-white p-5 hover:bg-purple-900 hover:font-bold transition-all"
               onClick={handleConnect}
             >
-              <div className="flex">
+              <div className="flex items-center">
                 <Network />
-                <span className="pl-4">Connect to socket</span>
+                <span className="pl-4 text-left">Connect to socket</span>
               </div>
             </button>
           </aside>
@@ -93,16 +116,42 @@ function App() {
               Add Count
             </Button>
             <span className="text-3xl">{count}</span>
-            {socket ? (
+            {connected && readyState === ReadyState.OPEN ? (
               <>
                 <span className="text-3xl">Connected to socket</span>
                 <Button
                   onClick={() => {
-                    socket.send("string");
+                    sendJsonMessage({ body: "Hi from react" });
                   }}
                 >
                   Send to socket
                 </Button>
+                {chatHistory.length > 0 && (
+                  <div className="flex flex-col w-full h-96 bg-purple-950">
+                    <div ref={chatContainerRef} className="overflow-y-scroll h-full">
+                      {chatHistory.map((c, i) => (
+                        <p key={i} className="text-white text-lg">
+                          <span className="opacity-60 text-sm">{c.from}</span>: {c.body}
+                        </p>
+                      ))}
+                    </div>
+                    <div className="w-full flex">
+                      <input
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        type="text"
+                        name="chat-input"
+                        className="w-full h-11 px-2 outline-none"
+                      />
+                      <button
+                        className="w-14 h-full grid place-items-center bg-black"
+                        onClick={handleSendChat}
+                      >
+                        <Send className="text-white" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <span className="text-3xl">Disonnected from socket</span>

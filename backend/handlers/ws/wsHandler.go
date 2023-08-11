@@ -2,6 +2,7 @@ package wsHandler
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/gofiber/contrib/websocket"
@@ -10,6 +11,7 @@ import (
 type Connections map[*websocket.Conn]bool
 
 type Message struct {
+	From string `json:"from"`
 	Body string `json:"body"`
 }
 
@@ -38,14 +40,16 @@ func HandleWsMonitor(c *websocket.Conn) {
 		if messageType == websocket.TextMessage {
 			log.Println("got textmessage:", string(message))
 
+			var jsonMsg Message
+			if err := json.Unmarshal(message, &jsonMsg); err != nil {
+				log.Println("unmarshal error:", err, ", message: ", message)
+				break
+			}
+			jsonMsg.From = c.RemoteAddr().String()
+
 			for ws, v := range conns {
 				if !v || ws.Params("id") != c.Params("id") {
 					continue
-				}
-
-				var jsonMsg Message
-				if err := json.Unmarshal(message, &jsonMsg); err != nil {
-					log.Println("unmarshal error:", err)
 				}
 
 				go func(ws *websocket.Conn) {
@@ -67,6 +71,19 @@ func SocketListener() {
 			log.Println("case c := <-register")
 
 			conns[c] = true
+			remote := c.RemoteAddr().String()
+
+			for ws, v := range conns {
+				if !v || ws.Params("id") != c.Params("id") {
+					continue
+				}
+
+				go func(ws *websocket.Conn) {
+					if err := ws.WriteJSON(Message{From: "Server", Body: fmt.Sprintf("%v has joined the channel", remote)}); err != nil {
+						log.Println("write error:", err)
+					}
+				}(ws)
+			}
 
 			log.Println("Appended connection")
 			log.Printf("Connection Params: %s\n", c.Params("id"))
