@@ -17,18 +17,17 @@ func main() {
 
 	database.ConnectDB()
 
-    app := fiber.New()
+	app := fiber.New()
 
 	app.Use(cors.New())
 
-    routes.SetupRoutes(app)
+	routes.SetupRoutes(app)
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"hello": "world",
 		})
 	})
-	
-    err := app.Listen(":3000")
-	log.Fatal(err)
+
+	log.Fatal(app.Listen(":3000"))
 }

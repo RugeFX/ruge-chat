@@ -8,5 +8,7 @@ import (
 func SetupRoutes(app *fiber.App) {
 	api := app.Group("/api")
 
+	RegisterWSRoute(app)
+
 	RegisterUserRoute(api)
 }

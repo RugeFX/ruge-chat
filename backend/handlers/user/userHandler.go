@@ -1,4 +1,4 @@
-package userHandlers
+package userHandler
 
 import (
 	"github.com/RugeFX/ruge-chat-app/database"
@@ -79,7 +79,7 @@ func CreateUser(c *fiber.Ctx) error {
 		Email:    user.Email,
 	}
 
-	 err := db.Create(&newUser).Error
+	err := db.Create(&newUser).Error
 
 	if err != nil {
 		if err == gorm.ErrDuplicatedKey {

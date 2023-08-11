@@ -1,42 +1,25 @@
-import { useState } from "react";
-import { atom, useAtom } from "jotai";
+import { useEffect, useState } from "react";
+import { useAtom } from "jotai";
 import { Button } from "./components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { Network, PlusCircle } from "lucide-react";
+import { type ChatEntry, chatEntriesAtom, countAtom } from "./store";
 
-interface Author {
-  name: string;
-  profilePicture: string;
-}
-
-interface LastChat {
-  from: string;
-  content: string;
-}
-
-interface Chat {
+interface TestEvent {
   id: number;
-  from: Author;
-  lastChat: LastChat;
+  data: string;
 }
-const counter = atom(0);
 
 function App() {
-  const [count, setCount] = useAtom(counter);
+  const [count, setCount] = useAtom(countAtom);
+  const [chatEntries, setChatEntries] = useAtom(chatEntriesAtom);
+
   const [addChatOpened, setAddChatOpened] = useState(false);
-  const [chats, setChats] = useState<Chat[] | null>([
-    {
-      id: 123,
-      from: {
-        name: "Mercur",
-        profilePicture:
-          "https://as2.ftcdn.net/v2/jpg/00/64/67/63/1000_F_64676383_LdbmhiNM6Ypzb3FM4PPuFP9rHe7ri8Ju.jpg",
-      },
-      lastChat: {
-        from: "You",
-        content: "pepek lorem ipsum sit dolor amet sit sit",
-      },
-    },
-  ]);
+  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [testEvents, setTestEvents] = useState<TestEvent[]>([]);
+
+  const handleConnect = () => {
+    setSocket(new WebSocket("ws://127.0.0.1:3000/ws"));
+  };
 
   return (
     <>
@@ -58,8 +41,8 @@ function App() {
       <main className="grid place-items-center">
         <div className="max-w-screen-2xl w-full h-full flex">
           <aside className="bg-black w-1/4 min-h-screen h-full flex flex-col">
-            {chats ? (
-              chats.map((c) => (
+            {chatEntries.length > 0 ? (
+              chatEntries.map((c) => (
                 <a
                   key={c.id}
                   href={`#${c.from.name}`}
@@ -74,7 +57,9 @@ function App() {
                 </a>
               ))
             ) : (
-              <span>No chats</span>
+              <span className="text-white p-5 hover:bg-purple-900 hover:font-bold transition-all w-full overflow-hidden">
+                No chats
+              </span>
             )}
             <button
               className="text-white p-5 hover:bg-purple-900 hover:font-bold transition-all"
@@ -85,6 +70,15 @@ function App() {
               <div className="flex">
                 <PlusCircle />
                 <span className="pl-4">Add a new chat</span>
+              </div>
+            </button>
+            <button
+              className="text-white p-5 hover:bg-purple-900 hover:font-bold transition-all"
+              onClick={handleConnect}
+            >
+              <div className="flex">
+                <Network />
+                <span className="pl-4">Connect to socket</span>
               </div>
             </button>
           </aside>
@@ -99,6 +93,20 @@ function App() {
               Add Count
             </Button>
             <span className="text-3xl">{count}</span>
+            {socket ? (
+              <>
+                <span className="text-3xl">Connected to socket</span>
+                <Button
+                  onClick={() => {
+                    socket.send("string");
+                  }}
+                >
+                  Send to socket
+                </Button>
+              </>
+            ) : (
+              <span className="text-3xl">Disonnected from socket</span>
+            )}
           </div>
         </div>
       </main>
