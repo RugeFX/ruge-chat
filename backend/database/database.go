@@ -26,6 +26,6 @@ func ConnectDB() {
 	fmt.Println("Connected to Database")
 
 	// Migrate the database
-	DB.AutoMigrate(&models.User{})
+	DB.AutoMigrate(&models.User{}, &models.Chat{})
 	fmt.Println("Migrated models into the Database")
 }

@@ -1,14 +1,28 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAtom } from "jotai";
 import { Button } from "./components/ui/button";
 import { Network, PlusCircle, Send } from "lucide-react";
 import { type ChatEntry, chatEntriesAtom, countAtom } from "./store";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 
-interface SocketMessage {
+type SocketError = {
+  field: string;
+  tag: string;
+  value: string;
+};
+
+type SocketMessageResponse = {
+  type: "message";
   from: string;
   body: string;
-}
+};
+
+type SocketErrorResponse = {
+  type: "error";
+  errors: SocketError[];
+};
+
+type SocketResponse = SocketMessageResponse | SocketErrorResponse;
 
 function App() {
   const [count, setCount] = useAtom(countAtom);
@@ -18,7 +32,7 @@ function App() {
   const [chatInput, setChatInput] = useState<string>("");
   const [addChatOpened, setAddChatOpened] = useState(false);
   const [connected, setConnected] = useState<boolean>(false);
-  const [chatHistory, setChatHistory] = useState<SocketMessage[]>([]);
+  const [chatHistory, setChatHistory] = useState<SocketMessageResponse[]>([]);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -26,20 +40,42 @@ function App() {
     `${socketUrl}/1`,
     {
       onMessage(evt) {
-        const jsonData = JSON.parse(evt.data) as SocketMessage;
+        const jsonData = JSON.parse(evt.data) as SocketResponse;
         console.log(jsonData);
-        setChatHistory((prev) => [...prev, { from: jsonData.from, body: jsonData.body }]);
-        chatContainerRef.current?.scroll({ top: chatContainerRef.current?.scrollHeight });
+        if (jsonData.type === "message") {
+          setChatHistory((prev) => [...prev, jsonData]);
+        } else {
+          console.error(jsonData.errors);
+        }
+      },
+      onOpen(evt) {
+        console.log("Opened connection to socket");
+      },
+      onClose(evt) {
+        console.log("Closed connection to socket");
       },
     },
     connected
   );
+
+  useEffect(() => {
+    if (chatContainerRef.current)
+      chatContainerRef.current.scroll({ top: chatContainerRef.current?.scrollHeight });
+  }, [chatHistory]);
+
+  const handleDisconnect = () => {
+    setConnected(false);
+  };
 
   const handleConnect = () => {
     setConnected(true);
   };
 
   const handleSendChat = () => {
+    if (chatInput === "") {
+      alert("Message must have at least 1 character");
+      return;
+    }
     sendJsonMessage({ body: chatInput });
     setChatInput("");
   };
@@ -95,39 +131,33 @@ function App() {
                 <span className="pl-4 text-left">Add a new chat</span>
               </div>
             </button>
-            <button
-              className="text-white p-5 hover:bg-purple-900 hover:font-bold transition-all"
-              onClick={handleConnect}
-            >
-              <div className="flex items-center">
-                <Network />
-                <span className="pl-4 text-left">Connect to socket</span>
-              </div>
-            </button>
+            {connected && readyState === ReadyState.OPEN ? (
+              <button
+                className="text-white p-5 hover:bg-purple-900 hover:font-bold transition-all"
+                onClick={handleDisconnect}
+              >
+                <div className="flex items-center">
+                  <Network />
+                  <span className="pl-4 text-left">Disconnect from socket</span>
+                </div>
+              </button>
+            ) : (
+              <button
+                className="text-white p-5 hover:bg-purple-900 hover:font-bold transition-all"
+                onClick={handleConnect}
+              >
+                <div className="flex items-center">
+                  <Network />
+                  <span className="pl-4 text-left">Connect to socket</span>
+                </div>
+              </button>
+            )}
           </aside>
           <div className="w-full bg-zinc-600 flex flex-col items-center justify-center gap-5">
-            <Button
-              variant="default"
-              size="lg"
-              onClick={() => {
-                setCount((c) => c + 1);
-              }}
-            >
-              Add Count
-            </Button>
-            <span className="text-3xl">{count}</span>
             {connected && readyState === ReadyState.OPEN ? (
-              <>
-                <span className="text-3xl">Connected to socket</span>
-                <Button
-                  onClick={() => {
-                    sendJsonMessage({ body: "Hi from react" });
-                  }}
-                >
-                  Send to socket
-                </Button>
+              <div className="flex flex-col w-full h-screen bg-purple-950">
                 {chatHistory.length > 0 && (
-                  <div className="flex flex-col w-full h-96 bg-purple-950">
+                  <>
                     <div ref={chatContainerRef} className="overflow-y-scroll h-full">
                       {chatHistory.map((c, i) => (
                         <p key={i} className="text-white text-lg">
@@ -150,11 +180,23 @@ function App() {
                         <Send className="text-white" />
                       </button>
                     </div>
-                  </div>
+                  </>
                 )}
-              </>
+              </div>
             ) : (
-              <span className="text-3xl">Disonnected from socket</span>
+              <>
+                <Button
+                  variant="default"
+                  size="lg"
+                  onClick={() => {
+                    setCount((c) => c + 1);
+                  }}
+                >
+                  Add Count
+                </Button>
+                <span className="text-3xl">{count}</span>
+                <span className="text-3xl">Disonnected from socket</span>
+              </>
             )}
           </div>
         </div>
