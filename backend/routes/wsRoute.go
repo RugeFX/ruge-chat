@@ -20,9 +20,4 @@ func RegisterWSRoute(r *fiber.App) {
 	})
 
 	ws.Get("/:id", websocket.New(wsHandler.HandleWs))
-
-	// ws.Get("/:id", websocket.New(wsHandler.HandleWs, websocket.Config{
-	// 	ReadBufferSize:  1024,
-	// 	WriteBufferSize: 1024,
-	// }))
 }
