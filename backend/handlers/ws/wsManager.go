@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gin-gonic/gin"
 )
 
 type ClientMap map[*Client]bool
@@ -29,23 +29,19 @@ func (m *Manager) listen() {
 	for {
 		select {
 		case c := <-m.register:
-			m.clients[c] = true
-			jsonMessage, _ := json.Marshal(&fiber.Map{"Content": "/A new socket has connected. ", "SenderIP": c.conn.RemoteAddr().String()})
+			m.addClient(c)
+			jsonMessage, _ := json.Marshal(&gin.H{"Content": "/A new socket has connected. ", "SenderIP": c.conn.RemoteAddr().String()})
 			m.sendMessage(jsonMessage, c)
 		case c := <-m.unregister:
-			if _, ok := m.clients[c]; ok {
-				close(c.egr)
-				delete(m.clients, c)
-				jsonMessage, _ := json.Marshal(&fiber.Map{"Content": "/A socket has disconnected. ", "SenderIP": c.conn.RemoteAddr().String()})
-				m.sendMessage(jsonMessage, c)
-			}
+			m.removeClient(c)
+			jsonMessage, _ := json.Marshal(&gin.H{"Content": "/A socket has disconnected. ", "SenderIP": c.conn.RemoteAddr().String()})
+			m.sendMessage(jsonMessage, c)
 		case message := <-m.broadcast:
 			for conn := range m.clients {
 				select {
 				case conn.egr <- message:
 				default:
-					close(conn.egr)
-					delete(m.clients, conn)
+					conn.man.removeClient(conn)
 				}
 			}
 		}
@@ -68,9 +64,9 @@ func (m *Manager) addClient(c *Client) {
 
 func (m *Manager) removeClient(c *Client) {
 	if _, y := m.clients[c]; y {
+		close(c.egr)
 		c.conn.Close()
 		delete(m.clients, c)
-
 		log.Println("Client disconnected")
 	}
 }

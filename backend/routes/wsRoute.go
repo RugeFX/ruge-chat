@@ -2,22 +2,11 @@ package routes
 
 import (
 	wsHandler "github.com/RugeFX/ruge-chat-app/handlers/ws"
-	"github.com/gofiber/contrib/websocket"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gin-gonic/gin"
 )
 
-func RegisterWSRoute(r *fiber.App) {
+func RegisterWSRoute(r *gin.Engine) {
 	ws := r.Group("/ws")
 
-	ws.Use(func(c *fiber.Ctx) error {
-		// IsWebSocketUpgrade returns true if the client
-		// requested upgrade to the WebSocket protocol.
-		if websocket.IsWebSocketUpgrade(c) {
-			c.Locals("allowed", true)
-			return c.Next()
-		}
-		return fiber.ErrUpgradeRequired
-	})
-
-	ws.Get("/:id", websocket.New(wsHandler.HandleWs))
+	ws.GET("/:id", gin.WrapF(wsHandler.HandleWs))
 }

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/gofiber/contrib/websocket"
-	"github.com/gofiber/fiber/v2"
+	"github.com/fasthttp/websocket"
+	"github.com/gin-gonic/gin"
 )
 
 type Client struct {
@@ -37,7 +37,7 @@ func (c *Client) readMessages() {
 			break
 		}
 
-		jsonMessage, _ := json.Marshal(&fiber.Map{"Content": string(p), "SenderIP": c.conn.RemoteAddr().String()})
+		jsonMessage, _ := json.Marshal(&gin.H{"Content": string(p), "SenderIP": c.conn.RemoteAddr().String()})
 		c.man.broadcast <- jsonMessage
 
 		log.Println("mt :", mt, "p :", string(p))

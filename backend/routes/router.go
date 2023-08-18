@@ -1,11 +1,11 @@
 package routes
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"github.com/gin-gonic/gin"
 )
 
 // Sets up all of the routes for the API
-func SetupRoutes(app *fiber.App) {
+func SetupRoutes(app *gin.Engine) {
 	api := app.Group("/api")
 	// /ws WebSocket endpoint
 	RegisterWSRoute(app)

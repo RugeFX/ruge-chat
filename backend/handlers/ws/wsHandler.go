@@ -1,8 +1,11 @@
 package ws
 
 import (
+	"log"
+	"net/http"
+
+	"github.com/fasthttp/websocket"
 	"github.com/go-playground/validator/v10"
-	"github.com/gofiber/contrib/websocket"
 )
 
 type Connections map[*websocket.Conn]bool
@@ -25,16 +28,27 @@ type ErrorResponse struct {
 }
 
 var (
-	conns      = make(Connections)
-	register   = make(chan *websocket.Conn)
-	unregister = make(chan *websocket.Conn)
-	validate   = validator.New()
+	conns             = make(Connections)
+	register          = make(chan *websocket.Conn)
+	unregister        = make(chan *websocket.Conn)
+	validate          = validator.New()
+	websocketUpgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
 )
 
-func HandleWs(c *websocket.Conn) {
+func HandleWs(w http.ResponseWriter, r *http.Request) {
 	manager := NewManager()
+	go manager.listen()
 
-	client := NewClient(c, manager)
+	conn, err := websocketUpgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	client := NewClient(conn, manager)
 	manager.register <- client
 
 	go client.readMessages()

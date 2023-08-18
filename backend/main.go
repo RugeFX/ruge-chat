@@ -1,12 +1,9 @@
 package main
 
 import (
-	"log"
-
 	"github.com/RugeFX/ruge-chat-app/database"
 	"github.com/RugeFX/ruge-chat-app/routes"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
@@ -14,20 +11,17 @@ func main() {
 	if envErr := godotenv.Load(); envErr != nil {
 		panic(envErr)
 	}
-
 	database.ConnectDB()
 
-	app := fiber.New()
+	r := gin.Default()
 
-	app.Use(cors.New())
+	routes.SetupRoutes(r)
 
-	routes.SetupRoutes(app)
-
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
 			"hello": "world",
 		})
 	})
 
-	log.Fatal(app.Listen(":3000"))
+	r.Run(":3000")
 }

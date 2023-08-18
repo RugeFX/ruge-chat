@@ -2,15 +2,15 @@ package routes
 
 import (
 	userHandler "github.com/RugeFX/ruge-chat-app/handlers/user"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gin-gonic/gin"
 )
 
 // Registers the /users endpoint into the router
-func RegisterUserRoute(r fiber.Router) {
+func RegisterUserRoute(r *gin.RouterGroup) {
 	user := r.Group("/users")
-	user.Get("/", userHandler.GetAllUsers)
-	user.Get("/:username", userHandler.GetUserByUsername)
-	user.Post("/", userHandler.CreateUser)
-	user.Delete("/:id", userHandler.DeleteUserByID)
-	user.Put("/:id", userHandler.UpdateUser)
+	user.GET("/", userHandler.GetAllUsers)
+	user.GET("/:username", userHandler.GetUserByUsername)
+	user.POST("/", userHandler.CreateUser)
+	user.DELETE("/:id", userHandler.DeleteUserByID)
+	user.PUT("/:id", userHandler.UpdateUser)
 }
