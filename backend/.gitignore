@@ -1,3 +1,4 @@
 *.rest
 tmp
 .env
+tests

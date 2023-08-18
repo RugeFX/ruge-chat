@@ -1,4 +1,4 @@
-package wsHandler
+package ws
 
 import (
 	"encoding/json"
@@ -35,10 +35,21 @@ var (
 	validate   = validator.New()
 )
 
-func HandleWsMonitor(c *websocket.Conn) {
-	go SocketListener()
+func HandleWs(c *websocket.Conn) {
+	manager := NewManager()
+
+	client := NewClient(c, manager)
+	manager.register <- client
+
+	go client.readMessages()
+	go client.writeMessages()
+}
+
+func _HandleWs(c *websocket.Conn) {
+	log.Println(c.Locals("allowed"))
+	go _SocketListener()
 	defer func() {
-		broadcastUserLeftMessage(c)
+		_broadcastUserLeftMessage(c)
 		unregister <- c
 	}()
 
@@ -54,14 +65,14 @@ func HandleWsMonitor(c *websocket.Conn) {
 		if messageType == websocket.TextMessage {
 			log.Println("got textmessage:", string(message))
 
-			broadcastJsonToChannel(c, message)
+			_broadcastJsonToChannel(c, message)
 		} else {
 			log.Println("received message of type:", messageType)
 		}
 	}
 }
 
-func SocketListener() {
+func _SocketListener() {
 	for {
 		select {
 		case c := <-register:
@@ -92,7 +103,7 @@ func SocketListener() {
 	}
 }
 
-func broadcastJsonToChannel(c *websocket.Conn, m []byte) {
+func _broadcastJsonToChannel(c *websocket.Conn, m []byte) {
 	var errors []*ErrorBody
 	var jsonMsg MessageResponse
 	if err := json.Unmarshal(m, &jsonMsg); err != nil {
@@ -134,7 +145,7 @@ func broadcastJsonToChannel(c *websocket.Conn, m []byte) {
 	}
 }
 
-func broadcastUserLeftMessage(c *websocket.Conn) {
+func _broadcastUserLeftMessage(c *websocket.Conn) {
 	remote := c.RemoteAddr().String()
 	for ws, v := range conns {
 		if !v || ws.Params("id") != c.Params("id") {
