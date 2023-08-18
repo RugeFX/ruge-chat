@@ -157,32 +157,29 @@ function App() {
           <div className="w-full bg-zinc-600 flex flex-col items-center justify-center gap-5">
             {connected && readyState === ReadyState.OPEN ? (
               <div className="flex flex-col w-full h-screen bg-purple-950">
-                {chatHistory.length > 0 && (
-                  <>
-                    <div ref={chatContainerRef} className="overflow-y-scroll h-full">
-                      {chatHistory.map((c, i) => (
-                        <p key={i} className="text-white text-lg">
-                          <span className="opacity-60 text-sm">{c.from}</span>: {c.body}
-                        </p>
-                      ))}
-                    </div>
-                    <div className="w-full flex">
-                      <input
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        type="text"
-                        name="chat-input"
-                        className="w-full h-11 px-2 outline-none"
-                      />
-                      <button
-                        className="w-14 h-full grid place-items-center bg-black"
-                        onClick={handleSendChat}
-                      >
-                        <Send className="text-white" />
-                      </button>
-                    </div>
-                  </>
-                )}
+                <div ref={chatContainerRef} className="overflow-y-scroll h-full">
+                  {chatHistory.length > 0 &&
+                    chatHistory.map((c, i) => (
+                      <p key={i} className="text-white text-lg">
+                        <span className="opacity-60 text-sm">{c.from}</span>: {c.body}
+                      </p>
+                    ))}
+                </div>
+                <div className="w-full flex">
+                  <input
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    type="text"
+                    name="chat-input"
+                    className="w-full h-11 px-2 outline-none"
+                  />
+                  <button
+                    className="w-14 h-full grid place-items-center bg-black"
+                    onClick={handleSendChat}
+                  >
+                    <Send className="text-white" />
+                  </button>
+                </div>
               </div>
             ) : (
               <>
