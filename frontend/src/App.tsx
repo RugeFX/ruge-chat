@@ -52,6 +52,7 @@ function App() {
         console.log("Opened connection to socket");
       },
       onClose(evt) {
+        setConnected(false);
         console.log("Closed connection to socket");
       },
     },
@@ -60,7 +61,7 @@ function App() {
 
   useEffect(() => {
     if (chatContainerRef.current)
-      chatContainerRef.current.scroll({ top: chatContainerRef.current?.scrollHeight });
+      chatContainerRef.current.scroll({ top: chatContainerRef.current.scrollHeight });
   }, [chatHistory]);
 
   const handleDisconnect = () => {
