@@ -2,9 +2,8 @@ package ws
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
-
-	"github.com/gin-gonic/gin"
 )
 
 type ClientMap map[*Client]bool
@@ -17,6 +16,7 @@ type Manager struct {
 }
 
 func NewManager() *Manager {
+	log.Println("New manager")
 	return &Manager{
 		clients:    make(ClientMap),
 		broadcast:  make(chan []byte),
@@ -25,16 +25,16 @@ func NewManager() *Manager {
 	}
 }
 
-func (m *Manager) listen() {
+func (m *Manager) Listen() {
 	for {
 		select {
 		case c := <-m.register:
 			m.addClient(c)
-			jsonMessage, _ := json.Marshal(&gin.H{"Content": "/A new socket has connected. ", "SenderIP": c.conn.RemoteAddr().String()})
+			jsonMessage, _ := json.Marshal(&MessageResponse{Type: "message", From: "Server", Body: fmt.Sprintf("%v has connected to the room", c.conn.RemoteAddr().String())})
 			m.sendMessage(jsonMessage, c)
 		case c := <-m.unregister:
 			m.removeClient(c)
-			jsonMessage, _ := json.Marshal(&gin.H{"Content": "/A socket has disconnected. ", "SenderIP": c.conn.RemoteAddr().String()})
+			jsonMessage, _ := json.Marshal(&MessageResponse{Type: "message", From: "Server", Body: fmt.Sprintf("%v has disconnected from the room", c.conn.RemoteAddr().String())})
 			m.sendMessage(jsonMessage, c)
 		case message := <-m.broadcast:
 			for conn := range m.clients {

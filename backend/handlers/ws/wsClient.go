@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/fasthttp/websocket"
-	"github.com/gin-gonic/gin"
 )
 
 type Client struct {
@@ -37,7 +36,7 @@ func (c *Client) readMessages() {
 			break
 		}
 
-		jsonMessage, _ := json.Marshal(&gin.H{"Content": string(p), "SenderIP": c.conn.RemoteAddr().String()})
+		jsonMessage, _ := json.Marshal(&MessageResponse{Type: "message", From: c.conn.RemoteAddr().String(), Body: string(p)})
 		c.man.broadcast <- jsonMessage
 
 		log.Println("mt :", mt, "p :", string(p))
