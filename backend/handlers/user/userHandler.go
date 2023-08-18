@@ -1,10 +1,11 @@
 package userHandler
 
 import (
+	"log"
+
 	"github.com/RugeFX/ruge-chat-app/database"
 	"github.com/RugeFX/ruge-chat-app/models"
 	"github.com/gin-gonic/gin"
-	"github.com/gofiber/fiber/v2/log"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -71,7 +72,7 @@ func CreateUser(c *gin.Context) {
 	// TODO : Validate user
 
 	if err := c.BindJSON(&user); err != nil {
-		log.Error(err)
+		log.Println(err)
 	}
 
 	newPass := hashPassword([]byte(user.Password))
@@ -178,7 +179,7 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	if err := c.BindJSON(&user); err != nil {
-		log.Error(err)
+		log.Println(err)
 	}
 
 	result = result.Save(&user)
