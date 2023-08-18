@@ -9,12 +9,13 @@ import (
 )
 
 func main() {
-	if envErr := godotenv.Load(); envErr != nil {
-		panic(envErr)
-	}
+	// Initialize env
+	setupEnv()
+	// Initialize DB
 	database.ConnectDB()
 
 	r := gin.Default()
+	r.SetTrustedProxies(nil)
 	r.Use(cors.Default())
 
 	routes.SetupRoutes(r)
@@ -26,4 +27,10 @@ func main() {
 	})
 
 	r.Run(":3000")
+}
+
+func setupEnv() {
+	if envErr := godotenv.Load(); envErr != nil {
+		panic(envErr)
+	}
 }
